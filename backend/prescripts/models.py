@@ -6,6 +6,45 @@ from django.template.defaultfilters import slugify
 User = get_user_model()
 
 
+class ComponentUnit(models.Model):
+    slug = models.SlugField(max_length=64, unique=True,
+                            verbose_name='Ссылка',)
+    name = models.CharField(
+        max_length=64, unique=True, verbose_name='Единица измерения',
+    )
+
+    class Meta:
+        verbose_name = 'Единица измерения'
+        verbose_name_plural = 'Единицы измерения'
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        return super().save(*args, **kwargs)
+
+
+class Component(models.Model):
+    name = models.CharField(
+        max_length=264, unique=True, verbose_name='Ингредиент',
+    )
+    unit = models.ForeignKey(
+        ComponentUnit, on_delete=models.CASCADE, related_name='components',
+        verbose_name='Единица измерения',
+    )
+
+    class Meta:
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
+        ordering = ('name',)
+
+    def __str__(self):
+        return f'{self.name} ({self.unit})'
+
+
 class Tag(models.Model):
     slug = models.SlugField(max_length=64, unique=True,
                             verbose_name='Ссылка',)
@@ -39,6 +78,9 @@ class Prescriptor(models.Model):
         upload_to='prescriptors/images/', null=True, blank=True,
         verbose_name='Изображение рецепта', default=None)
     text = models.TextField(verbose_name='Описание рецепта',)
+    components = models.ManyToManyField(Component,
+                                        through='PrescriptorComponent',
+                                        verbose_name='Ингредиенты',)
     tags = models.ManyToManyField(Tag, related_name='prescriptors',
                                   verbose_name='Теги',)
     cooking_time = models.PositiveSmallIntegerField(
@@ -52,3 +94,21 @@ class Prescriptor(models.Model):
 
     def __str__(self):
         return f'{self.name} от {self.author}'
+
+
+class PrescriptorComponent(models.Model):
+    prescriptor = models.ForeignKey(Prescriptor, on_delete=models.CASCADE)
+    component = models.ForeignKey(Component, on_delete=models.CASCADE)
+    quantity = models.PositiveSmallIntegerField(
+        verbose_name='Количество ингредиента в данном рецепте',)
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=('prescriptor', 'component'),
+                name='unique_PrescriptorComponent'
+            ),
+        )
+
+    def __str__(self):
+        return f'{self.prescriptor}: {self.component} - {self.quantity}'
