@@ -4,11 +4,13 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.views import TagViewSet
+from api.views import ComponentViewSet, ComponentUnitViewSet, TagViewSet
 
 
 router = DefaultRouter()
 
+router.register('components', ComponentViewSet, basename='components')
+router.register('componentunits', ComponentUnitViewSet, basename='componentunits')
 router.register('tags', TagViewSet, basename='tags')
 
 
