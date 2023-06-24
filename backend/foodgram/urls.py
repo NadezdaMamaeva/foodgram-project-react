@@ -4,19 +4,20 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.views import ComponentViewSet, ComponentUnitViewSet, TagViewSet
-
+from api.views import (ComponentViewSet, ComponentUnitViewSet, 
+                       TagViewSet,)
+from users.views import CustomUserViewSet
 
 router = DefaultRouter()
 
 router.register('components', ComponentViewSet, basename='components')
 router.register('componentunits', ComponentUnitViewSet, basename='componentunits')
 router.register('tags', TagViewSet, basename='tags')
+router.register('users', CustomUserViewSet, basename='users')
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),    
-    path('api/auth/', include('djoser.urls')),
+    path('admin/', admin.site.urls),
     path('api/auth/', include('djoser.urls.authtoken')),
     path('api/', include(router.urls)),
 ]
