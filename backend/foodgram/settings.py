@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'djoser',
     'prescripts.apps.PrescriptsConfig',
     'api.apps.ApiConfig',
+    'users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
+
+AUTH_USER_MODEL = 'users.User'
 
 DATABASES = {
     'default': {

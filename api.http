@@ -1,0 +1,19 @@
+POST http://127.0.0.1:8000/api/auth/token/login/
+Content-Type: application/json
+
+{
+    "username": "noknod",
+    "password": "vfufpby123"
+}
+
+###
+
+GET http://127.0.0.1:8000/api/prescriptors
+Content-Type: application/json
+Authorization: Token b5435a80574b631b8a889709a0e613f3cb3e5bce
+
+###
+
+GET http://127.0.0.1:8000/api/components
+Content-Type: application/json
+Authorization: Token b5435a80574b631b8a889709a0e613f3cb3e5bce
