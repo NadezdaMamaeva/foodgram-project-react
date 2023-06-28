@@ -18,6 +18,7 @@ class SignUpSerializer(UserCreateSerializer):
     password = serializers.CharField(
         label='Пароль', allow_blank=False, max_length=150,
         validators=(validate_password,), style={'input_type': 'password'},
+        write_only=True,
     )
 
     class Meta:
@@ -25,9 +26,6 @@ class SignUpSerializer(UserCreateSerializer):
         fields = (
             'id', 'username', 'email', 'password', 'first_name', 'last_name',
         )
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
 
     def validate(self, data):
         user = User.objects.filter(email=data.get('email')).first()
