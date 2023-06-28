@@ -12,7 +12,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class PrescriptorComponentInLine(admin.TabularInline):
-    model = Prescriptor.components.through
+    model = Prescriptor.ingredients.through
     extra = 1
 
 
@@ -23,7 +23,7 @@ class PrescriptorAdmin(admin.ModelAdmin):
     list_editable = ('name',)
     list_filter = ('author', 'name', 'tags',)
     empty_value_display = '-пусто-'
-    search_fields = ('name', 'cooking_time', 'components__name',)
+    search_fields = ('name', 'cooking_time', 'ingredients__name',)
     inlines = (PrescriptorComponentInLine,)
 
     @admin.display(description='Теги')

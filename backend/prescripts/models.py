@@ -24,6 +24,7 @@ class ComponentUnit(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        self.name = self.name.strip().lower()
         return super().save(*args, **kwargs)
 
 
@@ -78,7 +79,7 @@ class Prescriptor(models.Model):
         upload_to='prescriptors/images/', null=True, blank=True,
         verbose_name='Изображение рецепта', default=None)
     text = models.TextField(verbose_name='Описание рецепта',)
-    components = models.ManyToManyField(Component,
+    ingredients = models.ManyToManyField(Component,
                                         through='PrescriptorComponent',
                                         verbose_name='Ингредиенты',)
     tags = models.ManyToManyField(Tag, related_name='prescriptors',
@@ -89,6 +90,9 @@ class Prescriptor(models.Model):
 
     class Meta:
         ordering = ('-pub_date',)
+        constraints = (models.UniqueConstraint(
+                       fields=('name', 'author'),
+                       name='unique_prescriptor'),)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -97,9 +101,12 @@ class Prescriptor(models.Model):
 
 
 class PrescriptorComponent(models.Model):
-    prescriptor = models.ForeignKey(Prescriptor, on_delete=models.CASCADE)
+    prescriptor = models.ForeignKey(
+        Prescriptor, on_delete=models.CASCADE,
+        related_name='prescriptor_component',
+    )
     component = models.ForeignKey(Component, on_delete=models.CASCADE)
-    quantity = models.PositiveSmallIntegerField(
+    amount = models.PositiveSmallIntegerField(
         verbose_name='Количество ингредиента в данном рецепте',)
 
     class Meta:
@@ -111,4 +118,4 @@ class PrescriptorComponent(models.Model):
         )
 
     def __str__(self):
-        return f'{self.prescriptor}: {self.component} - {self.quantity}'
+        return f'{self.prescriptor}: {self.component} - {self.amount}'
