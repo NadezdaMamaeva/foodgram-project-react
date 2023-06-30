@@ -2,8 +2,11 @@ from django.contrib.auth.password_validation import validate_password
 from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueTogetherValidator
 
-from .models import User
+from prescripts.models import Prescriptor
+
+from .models import Subscription, User
 from .validators import validate_username
 
 
@@ -54,8 +57,59 @@ class UserSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def get_is_subscribed(self, obj):
-        return False
-    #   user = self.context.get('request').user
-    #    return user.is_authenticated and user.subscriber.filter(
-    #        user=user, author=obj
-    #    ).exists()
+        user = self.context.get('request').user
+        if not user.is_authenticated:
+            return False
+        return obj.subscribing.filter(user=user).exists()
+
+
+class SubscriptionPrescriptorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prescriptor
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class SubscriptionUserSerializer(UserSerializer):
+    recipes = serializers.SerializerMethodField(read_only=True,)
+    recipes_count = serializers.IntegerField(
+        source='recipes.count',
+        read_only=True,
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'recipes', 'recipes_count',
+        )
+        read_only_fields = (
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed',
+        )
+
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        limit = request.GET.get('recipes_limit')
+        if limit:
+            prescriptors = obj.prescriptors.all()[:(int(limit))]
+        else:
+            prescriptors = obj.prescriptors.all()
+        serializer = SubscriptionPrescriptorSerializer(
+            prescriptors, many=True, read_only=True,
+        )
+        return serializer.data
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ('author', 'user',)
+
+    def validate(self, data):
+        user = data.get('user')
+        author = data.get('author')
+        if author == user:
+            raise ValidationError({'error': 'Нельзя подписаться на себя'})
+        if author.subscribing.filter(user=user).exists():
+            raise ValidationError({'error': 'Подписка уже существует'})
+        return data

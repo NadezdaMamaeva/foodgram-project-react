@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 
 from .validators import validate_username
 
@@ -72,3 +73,37 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class Subscription(models.Model):
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        blank=False, null=False,
+        verbose_name='Автор',
+        related_name='subscribing',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        blank=False, null=False,
+        verbose_name='Подписчик',
+        related_name='subscriber',
+    )
+
+    class Meta:
+        ordering = ('author',)
+        constraints = (
+            models.UniqueConstraint(
+                fields=('author', 'user',), name='unique_Subscription'
+            ),
+        )
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+    
+    def clean(self):
+        if self.author == self.user:
+            raise ValidationError('Нельзя подписаться на себя')
+
+    def __str__(self) -> str:
+        return f'{self.user} подписан на {self.author}'
