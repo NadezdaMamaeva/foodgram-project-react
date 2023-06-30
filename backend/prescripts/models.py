@@ -119,3 +119,27 @@ class PrescriptorComponent(models.Model):
 
     def __str__(self):
         return f'{self.prescriptor}: {self.component} - {self.amount}'
+
+class Favorite(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='favorites',
+        verbose_name='Пользователь, выбравший рецепт',
+    )
+    prescriptor = models.ForeignKey(
+        Prescriptor, on_delete=models.CASCADE, 
+        related_name='favorites',
+        verbose_name='Рецепт',
+    )
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'prescriptor'),
+                name='unique_Favorite'
+            ),
+        )
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные рецепты'
+
+    def __str__(self):
+        return f'{self.user} отметил {self.prescriptor}'

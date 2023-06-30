@@ -1,12 +1,17 @@
 import base64
 
+from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.validators import MinValueValidator
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
-from prescripts.models import (Component, ComponentUnit, Prescriptor, 
+from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
                                PrescriptorComponent, Tag)
 from users.serializers import UserSerializer
+
+
+User = get_user_model()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -84,11 +89,14 @@ class PrescriptorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Prescriptor
-        fields = ('author', 'name', 'image', 'text', 'ingredients', 'tags',
+        fields = ('id', 'author', 'name', 'image', 'text', 'ingredients', 'tags',
                   'cooking_time', 'is_favorited', 'is_in_shopping_cart',)
 
     def get_is_favorited(self, obj):
-        return False
+        user = self.context.get('request').user
+        if not user.is_authenticated:
+            return False
+        return obj.favorites.filter(user=user).exists()
 
     def get_is_in_shopping_cart(self, obj):
         return False
@@ -116,9 +124,24 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
         fields = ('id', 'author', 'name', 'image', 'text', 'ingredients',
                   'tags', 'cooking_time',)
 
+    @staticmethod
+    def _set_components(prescriptor, components):
+        prescriptor_component = []
+        for tmp in components:
+            component = tmp['component']['id']
+            amount = tmp.get('amount')
+            prescriptor_component.append(
+                PrescriptorComponent(
+                    prescriptor=prescriptor,
+                    component=component,
+                    amount=amount
+                )
+            )
+        PrescriptorComponent.objects.bulk_create(prescriptor_component)
+
     def create(self, validated_data):
         author = self.context.get('request').user
-        name = validated_data.pop('name')
+        name = validated_data.get('name')
         if Prescriptor.objects.filter(author=author, name=name).exists():
             raise serializers.ValidationError(
                 "Рецепт с таким названием уже у вас есть"
@@ -133,17 +156,58 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
 
         prescriptor.tags.set(tags)
 
-        prescriptor_component = []
-        for tmp in components:           
-            component = tmp['component']['id']
-            amount = tmp.get('amount')
-            prescriptor_component.append(
-                PrescriptorComponent(
-                    prescriptor=prescriptor,
-                    component=component,
-                    amount=amount
-                )
-            )
-        PrescriptorComponent.objects.bulk_create(prescriptor_component)
+        self._set_components(prescriptor, components)
 
         return prescriptor
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.image = validated_data.get('image', instance.image)
+        instance.cooking_time = validated_data.get(
+            'cooking_time',
+            instance.cooking_time
+        )
+
+        tags = validated_data.pop('tags')
+        instance.tags.clear()
+        instance.tags.set(tags)
+
+        components = validated_data.pop('prescriptor_component')
+        instance.ingredients.clear()
+        self._set_components(instance, components)
+
+        instance.save()
+        return instance
+
+
+class PrescriptorInfoSerializer(serializers.ModelSerializer):
+    image = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Prescriptor
+        fields = ('id', 'name', 'image', 'cooking_time',)
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        write_only=True,
+        error_messages={'does_not_exist': 'Такого пользователя не существует'},
+    )
+    prescriptor = serializers.PrimaryKeyRelatedField(
+        queryset=Prescriptor.objects.all(),
+        write_only=True,
+        error_messages={'does_not_exist': 'Такого рецепта не существует'},
+    )
+
+    class Meta:
+        model = Favorite
+        fields = ('user', 'prescriptor',)
+
+    def validate(self, data):
+        user = data.get('user')
+        prescriptor = data.get('prescriptor')
+        if user.favorites.filter(prescriptor=prescriptor).exists():
+            raise ValidationError({'error': 'Рецепт уже в избранном'})
+        return data
