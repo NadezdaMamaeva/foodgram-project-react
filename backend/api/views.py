@@ -1,6 +1,7 @@
 from django.db.models import Sum
 from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
@@ -11,6 +12,7 @@ from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
                                PrescriptorComponent, ShoppingCart, Tag,)
 from users.pagination import CustomPagination
 
+from .filters import ComponentFilter, PrescriptorFilter
 from .serializers import (ComponentSerializer, ComponentPostSerializer,
                           ComponentUnitSerializer, FavoriteSerializer,
                           PrescriptorInfoSerializer, PrescriptorPostSerializer,
@@ -28,6 +30,8 @@ class ComponentViewSet(viewsets.ModelViewSet):
     queryset = Component.objects.select_related('unit').all()
     serializer_class = ComponentSerializer
     permission_classes = (permissions.AllowAny,)
+    filter_backends = (ComponentFilter,)
+    search_fields = ('^name',)
  
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -46,6 +50,8 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     serializer_class = PrescriptorSerializer
     permission_classes = (permissions.AllowAny,)
     pagination_class = CustomPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = PrescriptorFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):

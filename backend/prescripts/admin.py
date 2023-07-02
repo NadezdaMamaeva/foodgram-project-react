@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import (Component, ComponentUnit, Prescriptor, Tag,)
+from .models import (Component, ComponentUnit, Favorite, Prescriptor,
+                     ShoppingCart, Tag,)
 
 
 @admin.register(Tag)
@@ -47,3 +48,21 @@ class ComponentAdmin(admin.ModelAdmin):
     list_editable = ('name',)
     list_filter = ('name',)
     search_fields = ('name',)
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'prescriptor',)
+    list_display_links = ('id',)
+    list_editable = ('prescriptor',)
+    list_filter = ('user',)
+    search_fields = ('prescriptor',)
+
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'prescriptor',)
+    list_display_links = ('id',)
+    list_editable = ('prescriptor',)
+    list_filter = ('user',)
+    search_fields = ('prescriptor',)
