@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
-                               PrescriptorComponent, Tag)
+                               PrescriptorComponent,  ShoppingCart, Tag)
 from users.serializers import UserSerializer
 
 
@@ -99,7 +99,10 @@ class PrescriptorSerializer(serializers.ModelSerializer):
         return obj.favorites.filter(user=user).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        return False
+        user = self.context.get('request').user
+        if not user.is_authenticated:
+            return False
+        return obj.cart.filter(user=user).exists()
 
 
 class PrescriptorPostSerializer(serializers.ModelSerializer):
@@ -210,4 +213,28 @@ class FavoriteSerializer(serializers.ModelSerializer):
         prescriptor = data.get('prescriptor')
         if user.favorites.filter(prescriptor=prescriptor).exists():
             raise ValidationError({'error': 'Рецепт уже в избранном'})
+        return data
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        write_only=True,
+        error_messages={'does_not_exist': 'Такого пользователя не существует'},
+    )
+    prescriptor = serializers.PrimaryKeyRelatedField(
+        queryset=Prescriptor.objects.all(),
+        write_only=True,
+        error_messages={'does_not_exist': 'Такого рецепта не существует'},
+    )
+
+    class Meta:
+        model = ShoppingCart
+        fields = ('user', 'prescriptor',)
+
+    def validate(self, data):
+        user = data.get('user')
+        prescriptor = data.get('prescriptor')
+        if user.cart.filter(prescriptor=prescriptor).exists():
+            raise ValidationError({'error': 'Рецепт уже в корзине'})
         return data

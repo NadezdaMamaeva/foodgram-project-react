@@ -143,3 +143,28 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f'{self.user} отметил {self.prescriptor}'
+
+
+class ShoppingCart(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='cart',
+        verbose_name='Пользователь, добавивший рецепт в корзину',
+    )
+    prescriptor = models.ForeignKey(
+        Prescriptor, on_delete=models.CASCADE, 
+        related_name='cart',
+        verbose_name='Рецепт',
+    )
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'prescriptor'),
+                name='unique_ShoppingCart'
+            ),
+        )
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзина'
+
+    def __str__(self):
+        return f'{self.user} добавил {self.prescriptor} в корзину'

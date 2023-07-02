@@ -1,3 +1,5 @@
+from django.db.models import Sum
+from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 from rest_framework import status
@@ -6,13 +8,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
-                               Tag,)
+                               PrescriptorComponent, ShoppingCart, Tag,)
 from users.pagination import CustomPagination
 
 from .serializers import (ComponentSerializer, ComponentPostSerializer,
                           ComponentUnitSerializer, FavoriteSerializer,
                           PrescriptorInfoSerializer, PrescriptorPostSerializer,
-                          PrescriptorSerializer, TagSerializer,)
+                          PrescriptorSerializer, ShoppingCartSerializer,
+                          TagSerializer,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -47,7 +50,7 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return PrescriptorSerializer
-        elif self.action in ('favorite'):
+        elif self.action in ('favorite', 'shopping_cart'):
             return PrescriptorInfoSerializer
         return PrescriptorPostSerializer
 
@@ -87,3 +90,58 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
                 'detail': 'Рецепт удалён из избранного'
             }
             return Response(message, status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        ('post', 'delete'), permission_classes=(permissions.IsAuthenticated,),
+        detail=True,
+    )
+    def shopping_cart(self, request, pk):
+        user = request.user
+        prescriptor = get_object_or_404(Prescriptor, pk=pk)
+
+        if request.method == 'POST':
+            data = {
+                'user': user.id,
+                'prescriptor': prescriptor.id,
+            }
+            serializer = ShoppingCartSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            serializer = self.get_serializer(prescriptor)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            get_object_or_404(
+                ShoppingCart, user=user, prescriptor=prescriptor,
+            ).delete()
+            message = {
+                'detail': 'Рецепт удалён из корзины'
+            }
+            return Response(message, status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        ('get',), permission_classes=(permissions.IsAuthenticated,),
+        detail=False,
+    )
+    def download_shopping_cart(self, request):
+        user = request.user
+        components = PrescriptorComponent.objects.filter(
+            prescriptor__cart__user=user
+        ).order_by('component__name',
+        ).values(
+            'component__name', 'component__unit__name',
+        ).annotate(
+            amount=Sum('amount')
+        )
+        data = []
+        for component in components:
+            data.append(
+                f'{component["component__name"]} '
+                f'({component["component__unit__name"]}) - '
+                f'{component["amount"]}'
+            )
+        content = '\n'.join(data)
+        file = 'shopping_cart.txt'
+        response = HttpResponse(content, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename={file}'
+        return response
