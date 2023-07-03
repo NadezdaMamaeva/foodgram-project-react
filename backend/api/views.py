@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
                                PrescriptorComponent, ShoppingCart, Tag,)
 from users.pagination import CustomPagination
+from users.permissions import IsAdminOrReadOnly
 
 from .filters import ComponentFilter, PrescriptorFilter
 from .serializers import (ComponentSerializer, ComponentPostSerializer,
@@ -23,13 +24,13 @@ from .serializers import (ComponentSerializer, ComponentPostSerializer,
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class ComponentViewSet(viewsets.ModelViewSet):
     queryset = Component.objects.select_related('unit').all()
     serializer_class = ComponentSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (ComponentFilter,)
     search_fields = ('^name',)
  
@@ -42,13 +43,13 @@ class ComponentViewSet(viewsets.ModelViewSet):
 class ComponentUnitViewSet(viewsets.ModelViewSet):
     queryset = ComponentUnit.objects.all()
     serializer_class = ComponentUnitSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class PrescriptorViewSet(viewsets.ModelViewSet):
     queryset = Prescriptor.objects.all()
     serializer_class = PrescriptorSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = PrescriptorFilter

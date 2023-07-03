@@ -1,4 +1,5 @@
 from django_filters.rest_framework import FilterSet, filters
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 
 from prescripts.models import Component, Prescriptor, Tag
@@ -27,10 +28,11 @@ class PrescriptorFilter(FilterSet):
         model = Prescriptor
         fields = ('tags', 'author', 'is_favorited', 'is_in_shopping_cart',)
 
-
     def filter_is_favorited(self, queryset, name, value):
-        user = self.request.user    
-        if value is not None and user.is_authenticated:
+        user = self.request.user
+        if not user.is_authenticated:
+            raise ValidationError({'error':'Пользователь неавторизован'})
+        if value is not None:
             if value == 1:
                 return queryset.filter(favorites__user=user)
             elif value == 0:
@@ -39,7 +41,9 @@ class PrescriptorFilter(FilterSet):
 
     def filter_is_in_shopping_cart(self, queryset, name, value):        
         user = self.request.user
-        if value is not None and user.is_authenticated:            
+        if not user.is_authenticated:
+            raise ValidationError({'error':'Пользователь неавторизован'})
+        if value is not None:
             if value == 1:
                 return queryset.filter(cart__user=user)
             elif value == 0:

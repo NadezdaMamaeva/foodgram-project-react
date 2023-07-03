@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.template.defaultfilters import slugify
+from transliterate import translit
 
 
 User = get_user_model()
@@ -22,25 +23,27 @@ class ComponentUnit(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
         self.name = self.name.strip().lower()
+        if not self.slug:
+            tmp = translit(self.name, language_code='ru', reversed=True)
+            self.slug = slugify(tmp)
         return super().save(*args, **kwargs)
 
 
 class Component(models.Model):
-    name = models.CharField(
-        max_length=264, unique=True, verbose_name='Ингредиент',
-    )
+    name = models.CharField(max_length=264, verbose_name='Ингредиент',)
     unit = models.ForeignKey(
         ComponentUnit, on_delete=models.CASCADE, related_name='components',
         verbose_name='Единица измерения',
     )
 
     class Meta:
+        ordering = ('name',)
+        constraints = (models.UniqueConstraint(
+                       fields=('name', 'unit'),
+                       name='unique_component'),)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        ordering = ('name',)
 
     def __str__(self):
         return f'{self.name} ({self.unit})'
@@ -65,8 +68,10 @@ class Tag(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        self.name = self.name.strip().lower()
         if not self.slug:
-            self.slug = slugify(self.title)
+            tmp = translit(self.name, language_code='ru', reversed=True)
+            self.slug = slugify(tmp)
         return super().save(*args, **kwargs)
 
 
