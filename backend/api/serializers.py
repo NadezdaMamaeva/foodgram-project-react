@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
-                               PrescriptorComponent,  ShoppingCart, Tag)
+                               PrescriptorComponent, ShoppingCart, Tag)
 from users.serializers import UserSerializer
 
 
@@ -30,7 +30,7 @@ class ComponentSerializer(serializers.ModelSerializer):
     measurement_unit = serializers.StringRelatedField(
         read_only=True, source='unit',
     )
- 
+
     class Meta:
         fields = '__all__'
         model = Component
@@ -80,17 +80,18 @@ class PrescriptorSerializer(serializers.ModelSerializer):
         many=True, source='prescriptor_component'
     )
     tags = TagSerializer(many=True)
-    is_favorited  = serializers.SerializerMethodField(
+    is_favorited = serializers.SerializerMethodField(
         method_name='get_is_favorited'
     )
-    is_in_shopping_cart  = serializers.SerializerMethodField(
+    is_in_shopping_cart = serializers.SerializerMethodField(
         method_name='get_is_in_shopping_cart'
     )
 
     class Meta:
         model = Prescriptor
-        fields = ('id', 'author', 'name', 'image', 'text', 'ingredients', 'tags',
-                  'cooking_time', 'is_favorited', 'is_in_shopping_cart',)
+        fields = ('id', 'author', 'name', 'image', 'text', 'ingredients',
+                  'tags', 'cooking_time', 'is_favorited',
+                  'is_in_shopping_cart',)
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
@@ -119,8 +120,8 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
     cooking_time = serializers.IntegerField(
         required=True,
         validators=(MinValueValidator(
-            1, message='Время приготовления (в минутах) не меньше 1'),
-    ))
+            1, message='Время приготовления (в минутах) не меньше 1'),)
+    )
 
     class Meta:
         model = Prescriptor

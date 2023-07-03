@@ -15,7 +15,7 @@ class User(AbstractUser):
     ROLE_CHOICES = (
         (USER, 'Пользователь'),
         (ADMIN, 'Администратор'),
-    )    
+    )
 
     username = models.CharField(
         'Имя пользователя',
@@ -100,7 +100,7 @@ class Subscription(models.Model):
         )
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-    
+
     def clean(self):
         if self.author == self.user:
             raise ValidationError('Нельзя подписаться на себя')

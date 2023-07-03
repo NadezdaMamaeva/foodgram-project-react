@@ -31,7 +31,7 @@ class PrescriptorFilter(FilterSet):
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
         if not user.is_authenticated:
-            raise ValidationError({'error':'Пользователь неавторизован'})
+            raise ValidationError({'error': 'Пользователь неавторизован'})
         if value is not None:
             if value == 1:
                 return queryset.filter(favorites__user=user)
@@ -39,10 +39,10 @@ class PrescriptorFilter(FilterSet):
                 return queryset.exclude(favorites__user=user)
         return queryset
 
-    def filter_is_in_shopping_cart(self, queryset, name, value):        
+    def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if not user.is_authenticated:
-            raise ValidationError({'error':'Пользователь неавторизован'})
+            raise ValidationError({'error': 'Пользователь неавторизован'})
         if value is not None:
             if value == 1:
                 return queryset.filter(cart__user=user)

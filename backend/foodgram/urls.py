@@ -4,14 +4,15 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.views import (ComponentViewSet, ComponentUnitViewSet, 
+from api.views import (ComponentViewSet, ComponentUnitViewSet,
                        PrescriptorViewSet, TagViewSet,)
 from users.views import CustomUserViewSet
 
 router = DefaultRouter()
 
 router.register('ingredients', ComponentViewSet, basename='ingredients')
-router.register('componentunits', ComponentUnitViewSet, basename='componentunits')
+router.register('componentunits', ComponentUnitViewSet,
+                basename='componentunits')
 router.register('recipes', PrescriptorViewSet, basename='recipes')
 router.register('tags', TagViewSet, basename='tags')
 router.register('users', CustomUserViewSet, basename='users')
@@ -24,6 +25,6 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns +=  static(
+    urlpatterns += static(
         settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
     )

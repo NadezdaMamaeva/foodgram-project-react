@@ -33,7 +33,7 @@ class ComponentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (ComponentFilter,)
     search_fields = ('^name',)
- 
+
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return ComponentSerializer
@@ -64,9 +64,10 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.action in ('list', 'retrieve'):
             queryset = (Prescriptor.objects
-                          .prefetch_related('tags')
-                          .prefetch_related('ingredients')
-                          .order_by('-pub_date'))
+                        .prefetch_related('tags')
+                        .prefetch_related('ingredients')
+                        .order_by('-pub_date')
+                        )
             return queryset
         return Prescriptor.objects.all()
 
@@ -134,12 +135,12 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
         user = request.user
         components = PrescriptorComponent.objects.filter(
             prescriptor__cart__user=user
-        ).order_by('component__name',
+        ).order_by(
+            'component__name',
         ).values(
-            'component__name', 'component__unit__name',
-        ).annotate(
-            amount=Sum('amount')
-        )
+            'component__name',
+            'component__unit__name',
+        ).annotate(amount=Sum('amount'))
         data = []
         for component in components:
             data.append(

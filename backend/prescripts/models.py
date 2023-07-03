@@ -85,8 +85,8 @@ class Prescriptor(models.Model):
         verbose_name='Изображение рецепта', default=None)
     text = models.TextField(verbose_name='Описание рецепта',)
     ingredients = models.ManyToManyField(Component,
-                                        through='PrescriptorComponent',
-                                        verbose_name='Ингредиенты',)
+                                         through='PrescriptorComponent',
+                                         verbose_name='Ингредиенты',)
     tags = models.ManyToManyField(Tag, related_name='prescriptors',
                                   verbose_name='Теги',)
     cooking_time = models.PositiveSmallIntegerField(
@@ -125,13 +125,14 @@ class PrescriptorComponent(models.Model):
     def __str__(self):
         return f'{self.prescriptor}: {self.component} - {self.amount}'
 
+
 class Favorite(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='favorites',
         verbose_name='Пользователь, выбравший рецепт',
     )
     prescriptor = models.ForeignKey(
-        Prescriptor, on_delete=models.CASCADE, 
+        Prescriptor, on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Рецепт',
     )
@@ -156,7 +157,7 @@ class ShoppingCart(models.Model):
         verbose_name='Пользователь, добавивший рецепт в корзину',
     )
     prescriptor = models.ForeignKey(
-        Prescriptor, on_delete=models.CASCADE, 
+        Prescriptor, on_delete=models.CASCADE,
         related_name='cart',
         verbose_name='Рецепт',
     )
