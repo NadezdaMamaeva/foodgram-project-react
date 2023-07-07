@@ -13,9 +13,7 @@ services:
       - pg_data:/var/lib/postgresql/data
 
   backend:
-    build:
-      context: ../backend/
-      dockerfile: Dockerfile
+    image: mamaevanadejda/foodgram_backend
     env_file: .env
     volumes:
       - static:/static/
@@ -25,9 +23,7 @@ services:
      - db
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: mamaevanadejda/foodgram_frontend
     volumes:
       - ../frontend/:/app/result_build/
 

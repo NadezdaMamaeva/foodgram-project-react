@@ -6,3 +6,4 @@ djangorestframework==3.12.4
 djoser==2.1.0
 django-filter==21.1
 transliterate==1.10.2
+psycopg2-binary==2.9.3
