@@ -3,6 +3,7 @@ import base64
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.validators import MinValueValidator
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -107,7 +108,7 @@ class PrescriptorSerializer(serializers.ModelSerializer):
 
 
 class PrescriptorPostSerializer(serializers.ModelSerializer):
-    author = UserSerializer(many=False, read_only=True,)
+    author = UserSerializer(read_only=True,)
     image = Base64ImageField(required=True, allow_null=False, max_length=None)
     ingredients = PrescriptorComponentSerializer(
         many=True, required=True,
@@ -151,16 +152,14 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
                 "Рецепт с таким названием уже у вас есть"
             )
 
-        components = validated_data.pop('prescriptor_component')
-        tags = validated_data.pop('tags')
+        with transaction.atomic():
+            prescriptor = Prescriptor.objects.create(
+                author=author, **validated_data
+            )
 
-        prescriptor = Prescriptor.objects.create(
-            author=author, **validated_data
-        )
+            prescriptor.tags.set(tags)
 
-        prescriptor.tags.set(tags)
-
-        self._set_components(prescriptor, components)
+            self._set_components(prescriptor, components)
 
         return prescriptor
 
@@ -174,14 +173,17 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
         )
 
         tags = validated_data.pop('tags')
-        instance.tags.clear()
-        instance.tags.set(tags)
 
-        components = validated_data.pop('prescriptor_component')
-        instance.ingredients.clear()
-        self._set_components(instance, components)
+        with transaction.atomic():
+            instance.tags.clear()
+            instance.tags.set(tags)
 
-        instance.save()
+            components = validated_data.pop('prescriptor_component')
+            instance.ingredients.clear()
+            self._set_components(instance, components)
+
+            instance.save()
+
         return instance
 
 

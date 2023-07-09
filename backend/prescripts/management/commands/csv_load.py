@@ -1,15 +1,15 @@
 import csv
 import os
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, no_translations
+from django.conf import settings
 
 from prescripts.models import Component, ComponentUnit
 
 
 TABLES_FOR_LOAD = (('ingredients.csv', Component,),)
 
-CSV_FILES_DIR = os.path.join(settings.BASE_DIR, '..', 'data')
+CSV_FILES_DIR = settings.BASE_DIR.parent / 'data'
 
 
 class Command(BaseCommand):
@@ -21,7 +21,7 @@ class Command(BaseCommand):
         print(f'Пробуем загрузить таблицу {csv_file_path}')
 
         with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
-            unit_dict = dict()
+            unit_dict = {}
             reader = csv.reader(csvfile, delimiter=',')
 
             cnt = 0

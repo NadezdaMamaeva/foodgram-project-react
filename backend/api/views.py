@@ -1,5 +1,5 @@
 from django.db.models import Sum
-from django.http.response import HttpResponse
+from django.http.response import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
@@ -8,10 +8,10 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from foodgram.pagination import CustomPagination
+from foodgram.permissions import IsAdminOrReadOnly
 from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
                                PrescriptorComponent, ShoppingCart, Tag,)
-from users.pagination import CustomPagination
-from users.permissions import IsAdminOrReadOnly
 
 from .filters import ComponentFilter, PrescriptorFilter
 from .serializers import (ComponentSerializer, ComponentPostSerializer,
@@ -46,6 +46,26 @@ class ComponentUnitViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
 
+def _get_shopping_cart(user):
+    components = PrescriptorComponent.objects.filter(
+        prescriptor__cart__user=user
+    ).order_by(
+        'component__name',
+    ).values(
+        'component__name',
+        'component__unit__name',
+    ).annotate(amount=Sum('amount'))
+    data = []
+    for component in components:
+        data.append(
+            f'{component["component__name"]} '
+            f'({component["component__unit__name"]}) - '
+            f'{component["amount"]}'
+        )
+    content = '\n'.join(data)
+    return content
+
+
 class PrescriptorViewSet(viewsets.ModelViewSet):
     queryset = Prescriptor.objects.all()
     serializer_class = PrescriptorSerializer
@@ -64,10 +84,9 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.action in ('list', 'retrieve'):
             queryset = (Prescriptor.objects
-                        .prefetch_related('tags')
-                        .prefetch_related('ingredients')
+                        .prefetch_related('author', 'tags', 'ingredients',)
                         .order_by('-pub_date')
-                        )
+            )
             return queryset
         return Prescriptor.objects.all()
 
@@ -133,23 +152,8 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         user = request.user
-        components = PrescriptorComponent.objects.filter(
-            prescriptor__cart__user=user
-        ).order_by(
-            'component__name',
-        ).values(
-            'component__name',
-            'component__unit__name',
-        ).annotate(amount=Sum('amount'))
-        data = []
-        for component in components:
-            data.append(
-                f'{component["component__name"]} '
-                f'({component["component__unit__name"]}) - '
-                f'{component["amount"]}'
-            )
-        content = '\n'.join(data)
+        content = _get_shopping_cart(user)
         file = 'shopping_cart.txt'
-        response = HttpResponse(content, content_type='text/plain')
+        response = FileResponse(content, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={file}'
         return response

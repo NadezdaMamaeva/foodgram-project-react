@@ -6,8 +6,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from foodgram.pagination import CustomPagination
+
 from .models import Subscription, User
-from .pagination import CustomPagination
 from .serializers import (SignUpSerializer, SubscriptionSerializer,
                           SubscriptionUserSerializer, UserSerializer,)
 
