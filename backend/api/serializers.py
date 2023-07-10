@@ -146,12 +146,6 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = self.context.get('request').user
-        name = validated_data.get('name')
-        if Prescriptor.objects.filter(author=author, name=name).exists():
-            raise serializers.ValidationError(
-                "Рецепт с таким названием уже у вас есть"
-            )
-
         with transaction.atomic():
             prescriptor = Prescriptor.objects.create(
                 author=author, **validated_data
