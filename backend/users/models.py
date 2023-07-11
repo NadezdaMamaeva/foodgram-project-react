@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy
 
 from .validators import validate_username
 
@@ -12,10 +13,9 @@ class User(AbstractUser):
     USER = 'user'
     ADMIN = 'admin'
 
-    ROLE_CHOICES = (
-        (USER, 'Пользователь'),
-        (ADMIN, 'Администратор'),
-    )
+    class UserRole(models.TextChoices):
+        USER = 'US', gettext_lazy('Пользователь')
+        ADMIN = 'AD', gettext_lazy('Администратор')
 
     username = models.CharField(
         'Имя пользователя',
@@ -48,8 +48,8 @@ class User(AbstractUser):
     role = models.CharField(
         'Роль',
         max_length=20,
-        choices=ROLE_CHOICES,
-        default=USER,
+        choices=UserRole.choices,
+        default=UserRole.USER,
         blank=False,
     )
 

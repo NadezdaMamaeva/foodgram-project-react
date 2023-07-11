@@ -8,7 +8,8 @@ from rest_framework.response import Response
 
 from foodgram.pagination import CustomPagination
 
-from .models import Subscription, User
+from users.models import Subscription, User
+
 from .serializers import (SignUpSerializer, SubscriptionSerializer,
                           SubscriptionUserSerializer, UserSerializer,)
 

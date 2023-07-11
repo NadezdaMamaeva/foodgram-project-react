@@ -9,7 +9,7 @@ from rest_framework.exceptions import ValidationError
 
 from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
                                PrescriptorComponent, ShoppingCart, Tag)
-from users.serializers import UserSerializer
+from api.users.serializers import UserSerializer
 
 
 User = get_user_model()

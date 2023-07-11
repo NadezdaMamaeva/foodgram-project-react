@@ -1,12 +1,12 @@
 from django.contrib.auth.password_validation import validate_password
-from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from prescripts.models import Prescriptor
 
-from .models import Subscription, User
-from .validators import validate_username
+from users.models import Subscription, User
+from users.validators import validate_username
 
 
 class SignUpSerializer(UserCreateSerializer):
@@ -39,7 +39,7 @@ class SignUpSerializer(UserCreateSerializer):
         return data
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField(
         method_name='get_is_subscribed'
     )
@@ -50,10 +50,6 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name', 'role',
             'is_subscribed',
         )
-
-    def update(self, instance, validated_data):
-        validated_data.pop('role', None)
-        return super().update(instance, validated_data)
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user

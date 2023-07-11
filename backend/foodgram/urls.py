@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 from api.views import (ComponentViewSet, ComponentUnitViewSet,
                        PrescriptorViewSet, TagViewSet,)
-from users.views import CustomUserViewSet
+from api.users.views import CustomUserViewSet
 
 router = DefaultRouter()
 
