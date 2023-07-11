@@ -86,7 +86,7 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
             queryset = (Prescriptor.objects
                         .prefetch_related('author', 'tags', 'ingredients',)
                         .order_by('-pub_date')
-            )
+                        )
             return queryset
         return Prescriptor.objects.all()
 

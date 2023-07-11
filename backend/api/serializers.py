@@ -146,13 +146,14 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = self.context.get('request').user
+        components = validated_data.pop('prescriptor_component')
+        tags = validated_data.pop('tags')
+
         with transaction.atomic():
             prescriptor = Prescriptor.objects.create(
                 author=author, **validated_data
             )
-
             prescriptor.tags.set(tags)
-
             self._set_components(prescriptor, components)
 
         return prescriptor
@@ -167,15 +168,13 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
         )
 
         tags = validated_data.pop('tags')
+        components = validated_data.pop('prescriptor_component')
 
         with transaction.atomic():
             instance.tags.clear()
             instance.tags.set(tags)
-
-            components = validated_data.pop('prescriptor_component')
             instance.ingredients.clear()
             self._set_components(instance, components)
-
             instance.save()
 
         return instance
