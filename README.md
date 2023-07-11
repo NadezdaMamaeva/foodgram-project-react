@@ -1,7 +1,7 @@
 ### Развёрнутый проект:
 
 Сайт:
-https://51.250.105.78
+https://foodgram2023.ddns.net
 Email:
 admin@mail.ru
 Пароль:
