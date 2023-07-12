@@ -1,4 +1,3 @@
-from django.db.models import Sum
 from django.http.response import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -10,15 +9,15 @@ from rest_framework.response import Response
 
 from foodgram.pagination import CustomPagination
 from foodgram.permissions import IsAdminOrReadOnly
-from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
-                               PrescriptorComponent, ShoppingCart, Tag,)
+from prescripts.models import (Component, ComponentUnit, Favorite, Recipe,
+                               ShoppingCart, Tag,)
 
-from .filters import ComponentFilter, PrescriptorFilter
+from api.filters import ComponentFilter, PrescriptorFilter
 from .serializers import (ComponentSerializer, ComponentPostSerializer,
                           ComponentUnitSerializer, FavoriteSerializer,
-                          PrescriptorInfoSerializer, PrescriptorPostSerializer,
-                          PrescriptorSerializer, ShoppingCartSerializer,
-                          TagSerializer,)
+                          RecipePostSerializer, RecipeSerializer,
+                          ShoppingCartSerializer, TagSerializer,)
+from .func import get_shopping_cart
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -46,7 +45,7 @@ class ComponentUnitViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
 
-def _get_shopping_cart(user):
+def get_shopping_cart(user):
     components = PrescriptorComponent.objects.filter(
         prescriptor__cart__user=user
     ).order_by(
@@ -67,8 +66,7 @@ def _get_shopping_cart(user):
 
 
 class PrescriptorViewSet(viewsets.ModelViewSet):
-    queryset = Prescriptor.objects.all()
-    serializer_class = PrescriptorSerializer
+    serializer_class = RecipeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
@@ -76,19 +74,18 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
-            return PrescriptorSerializer
-        elif self.action in ('favorite', 'shopping_cart'):
-            return PrescriptorInfoSerializer
-        return PrescriptorPostSerializer
+            return RecipeSerializer
+        return RecipePostSerializer
 
     def get_queryset(self):
         if self.action in ('list', 'retrieve'):
-            queryset = (Prescriptor.objects
-                        .prefetch_related('author', 'tags', 'ingredients',)
+            queryset = (Recipe.objects
+                        .prefetch_related('tags', 'ingredients',)
+                        .select_related('author',)
                         .order_by('-pub_date')
                         )
             return queryset
-        return Prescriptor.objects.all()
+        return Recipe.objects.all()
 
     @action(
         ('post', 'delete'), permission_classes=(permissions.IsAuthenticated,),
@@ -96,7 +93,7 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk):
         user = request.user
-        prescriptor = get_object_or_404(Prescriptor, pk=pk)
+        prescriptor = get_object_or_404(Recipe, pk=pk)
 
         if request.method == 'POST':
             data = {
@@ -124,7 +121,7 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk):
         user = request.user
-        prescriptor = get_object_or_404(Prescriptor, pk=pk)
+        prescriptor = get_object_or_404(Recipe, pk=pk)
 
         if request.method == 'POST':
             data = {
@@ -152,7 +149,7 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         user = request.user
-        content = _get_shopping_cart(user)
+        content = get_shopping_cart(user)
         file = 'shopping_cart.txt'
         response = FileResponse(content, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={file}'

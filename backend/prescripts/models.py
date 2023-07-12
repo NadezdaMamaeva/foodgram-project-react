@@ -75,7 +75,7 @@ class Tag(models.Model):
         return super().save(*args, **kwargs)
 
 
-class Prescriptor(models.Model):
+class Recipe(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='prescriptors',
         verbose_name='Автор публикации',)
@@ -85,7 +85,7 @@ class Prescriptor(models.Model):
         verbose_name='Изображение рецепта', default=None)
     text = models.TextField(verbose_name='Описание рецепта',)
     ingredients = models.ManyToManyField(Component,
-                                         through='PrescriptorComponent',
+                                         through='RecipeComponent',
                                          verbose_name='Ингредиенты',)
     tags = models.ManyToManyField(Tag, related_name='prescriptors',
                                   verbose_name='Теги',)
@@ -105,9 +105,9 @@ class Prescriptor(models.Model):
         return f'{self.name} от {self.author}'
 
 
-class PrescriptorComponent(models.Model):
+class RecipeComponent(models.Model):
     prescriptor = models.ForeignKey(
-        Prescriptor, on_delete=models.CASCADE,
+        Recipe, on_delete=models.CASCADE,
         related_name='prescriptor_component',
     )
     component = models.ForeignKey(Component, on_delete=models.CASCADE)
@@ -132,7 +132,7 @@ class Favorite(models.Model):
         verbose_name='Пользователь, выбравший рецепт',
     )
     prescriptor = models.ForeignKey(
-        Prescriptor, on_delete=models.CASCADE,
+        Recipe, on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Рецепт',
     )
@@ -157,7 +157,7 @@ class ShoppingCart(models.Model):
         verbose_name='Пользователь, добавивший рецепт в корзину',
     )
     prescriptor = models.ForeignKey(
-        Prescriptor, on_delete=models.CASCADE,
+        Recipe, on_delete=models.CASCADE,
         related_name='cart',
         verbose_name='Рецепт',
     )

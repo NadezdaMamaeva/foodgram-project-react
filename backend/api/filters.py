@@ -2,7 +2,7 @@ from django_filters.rest_framework import FilterSet, filters
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 
-from prescripts.models import Component, Prescriptor, Tag
+from prescripts.models import Component, Recipe, Tag
 
 
 class ComponentFilter(SearchFilter):
@@ -25,7 +25,7 @@ class PrescriptorFilter(FilterSet):
     )
 
     class Meta:
-        model = Prescriptor
+        model = Recipe
         fields = ('tags', 'author', 'is_favorited', 'is_in_shopping_cart',)
 
     def filter_is_favorited(self, queryset, name, value):

@@ -3,7 +3,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from prescripts.models import Prescriptor
+from prescripts.models import Recipe
 
 from users.models import Subscription, User
 from users.validators import validate_username
@@ -60,7 +60,7 @@ class UserSerializer(UserSerializer):
 
 class SubscriptionPrescriptorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Prescriptor
+        model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
 
 

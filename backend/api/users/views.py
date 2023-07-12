@@ -7,9 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from foodgram.pagination import CustomPagination
-
 from users.models import Subscription, User
-
 from .serializers import (SignUpSerializer, SubscriptionSerializer,
                           SubscriptionUserSerializer, UserSerializer,)
 
@@ -27,19 +25,6 @@ class CustomUserViewSet(UserViewSet):
         if self.action in ('subscribe', 'subscriptions',):
             return SubscriptionUserSerializer
         return SignUpSerializer
-
-    @action(('post',), detail=False)
-    def set_password(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.request.user.set_password(serializer.data['new_password'])
-        self.request.user.save()
-        return Response(
-            {
-                'detail': 'Пароль изменён успешно'
-            },
-            status=status.HTTP_204_NO_CONTENT
-        )
 
     @action(
         ('post', 'delete'), permission_classes=(IsAuthenticated,),

@@ -4,8 +4,8 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.views import (ComponentViewSet, ComponentUnitViewSet,
-                       PrescriptorViewSet, TagViewSet,)
+from api.prescripts.views import (ComponentViewSet, ComponentUnitViewSet,
+                                  PrescriptorViewSet, TagViewSet,)
 from api.users.views import CustomUserViewSet
 
 router = DefaultRouter()

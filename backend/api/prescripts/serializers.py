@@ -7,8 +7,8 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from prescripts.models import (Component, ComponentUnit, Favorite, Prescriptor,
-                               PrescriptorComponent, ShoppingCart, Tag)
+from prescripts.models import (Component, ComponentUnit, Favorite, Recipe,
+                               RecipeComponent, ShoppingCart, Tag)
 from api.users.serializers import UserSerializer
 
 
@@ -54,7 +54,7 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class PrescriptorComponentSerializer(serializers.ModelSerializer):
+class RecipeComponentSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Component.objects.all(),
         source='component.id',
@@ -70,14 +70,14 @@ class PrescriptorComponentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = PrescriptorComponent
+        model = RecipeComponent
         fields = ('id', 'name', 'unit', 'measurement_unit', 'amount',)
 
 
-class PrescriptorSerializer(serializers.ModelSerializer):
+class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(many=False, read_only=True,)
     image = Base64ImageField(required=False, allow_null=True)
-    ingredients = PrescriptorComponentSerializer(
+    ingredients = RecipeComponentSerializer(
         many=True, source='prescriptor_component'
     )
     tags = TagSerializer(many=True)
@@ -89,7 +89,7 @@ class PrescriptorSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = Prescriptor
+        model = Recipe
         fields = ('id', 'author', 'name', 'image', 'text', 'ingredients',
                   'tags', 'cooking_time', 'is_favorited',
                   'is_in_shopping_cart',)
@@ -107,10 +107,10 @@ class PrescriptorSerializer(serializers.ModelSerializer):
         return obj.cart.filter(user=user).exists()
 
 
-class PrescriptorPostSerializer(serializers.ModelSerializer):
+class RecipePostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True,)
     image = Base64ImageField(required=True, allow_null=False, max_length=None)
-    ingredients = PrescriptorComponentSerializer(
+    ingredients = RecipeComponentSerializer(
         many=True, required=True,
         source='prescriptor_component',
     )
@@ -125,7 +125,7 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = Prescriptor
+        model = Recipe
         fields = ('id', 'author', 'name', 'image', 'text', 'ingredients',
                   'tags', 'cooking_time',)
 
@@ -136,13 +136,13 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
             component = tmp['component']['id']
             amount = tmp.get('amount')
             prescriptor_component.append(
-                PrescriptorComponent(
+                RecipeComponent(
                     prescriptor=prescriptor,
                     component=component,
                     amount=amount
                 )
             )
-        PrescriptorComponent.objects.bulk_create(prescriptor_component)
+        RecipeComponent.objects.bulk_create(prescriptor_component)
 
     def create(self, validated_data):
         author = self.context.get('request').user
@@ -150,7 +150,7 @@ class PrescriptorPostSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
 
         with transaction.atomic():
-            prescriptor = Prescriptor.objects.create(
+            prescriptor = Recipe.objects.create(
                 author=author, **validated_data
             )
             prescriptor.tags.set(tags)
@@ -184,7 +184,7 @@ class PrescriptorInfoSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
-        model = Prescriptor
+        model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time',)
 
 
@@ -195,7 +195,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
         error_messages={'does_not_exist': 'Такого пользователя не существует'},
     )
     prescriptor = serializers.PrimaryKeyRelatedField(
-        queryset=Prescriptor.objects.all(),
+        queryset=Recipe.objects.all(),
         write_only=True,
         error_messages={'does_not_exist': 'Такого рецепта не существует'},
     )
@@ -219,7 +219,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         error_messages={'does_not_exist': 'Такого пользователя не существует'},
     )
     prescriptor = serializers.PrimaryKeyRelatedField(
-        queryset=Prescriptor.objects.all(),
+        queryset=Recipe.objects.all(),
         write_only=True,
         error_messages={'does_not_exist': 'Такого рецепта не существует'},
     )

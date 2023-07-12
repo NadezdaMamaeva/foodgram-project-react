@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (Component, ComponentUnit, Favorite, Prescriptor,
+from .models import (Component, ComponentUnit, Favorite, Recipe,
                      ShoppingCart, Tag,)
 
 
@@ -13,12 +13,12 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class PrescriptorComponentInLine(admin.TabularInline):
-    model = Prescriptor.ingredients.through
+    model = Recipe.ingredients.through
     extra = 1
 
 
-@admin.register(Prescriptor)
-class PrescriptorAdmin(admin.ModelAdmin):
+@admin.register(Recipe)
+class RecipeAdmin(admin.ModelAdmin):
     list_display = ('author', 'name', 'get_tags',)
     list_display_links = ('author',)
     list_editable = ('name',)
