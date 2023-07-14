@@ -95,16 +95,10 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'is_in_shopping_cart',)
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
-        if not user.is_authenticated:
-            return False
-        return obj.favorites.filter(user=user).exists()
+        return obj.is_favorited
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
-        if not user.is_authenticated:
-            return False
-        return obj.cart.filter(user=user).exists()
+        return obj.is_in_shopping_cart
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
@@ -180,7 +174,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return instance
 
 
-class PrescriptorInfoSerializer(serializers.ModelSerializer):
+class RecipeInfoSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
 
     class Meta:

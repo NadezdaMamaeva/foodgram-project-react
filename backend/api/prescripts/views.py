@@ -1,3 +1,4 @@
+from django.db.models import Exists, OuterRef
 from django.http.response import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -15,8 +16,9 @@ from prescripts.models import (Component, ComponentUnit, Favorite, Recipe,
 from api.filters import ComponentFilter, PrescriptorFilter
 from .serializers import (ComponentSerializer, ComponentPostSerializer,
                           ComponentUnitSerializer, FavoriteSerializer,
-                          RecipePostSerializer, RecipeSerializer,
-                          ShoppingCartSerializer, TagSerializer,)
+                          RecipeInfoSerializer, RecipePostSerializer,
+                          RecipeSerializer, ShoppingCartSerializer,
+                          TagSerializer,)
 from .func import get_shopping_cart
 
 
@@ -45,32 +47,14 @@ class ComponentUnitViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
 
-def get_shopping_cart(user):
-    components = PrescriptorComponent.objects.filter(
-        prescriptor__cart__user=user
-    ).order_by(
-        'component__name',
-    ).values(
-        'component__name',
-        'component__unit__name',
-    ).annotate(amount=Sum('amount'))
-    data = []
-    for component in components:
-        data.append(
-            f'{component["component__name"]} '
-            f'({component["component__unit__name"]}) - '
-            f'{component["amount"]}'
-        )
-    content = '\n'.join(data)
-    return content
-
-
 class PrescriptorViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = PrescriptorFilter
+    favorites = Favorite.objects.filter(user=OuterRef('id'))
+    cart = ShoppingCart.objects.filter(user=OuterRef('id'))
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -82,66 +66,74 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
             queryset = (Recipe.objects
                         .prefetch_related('tags', 'ingredients',)
                         .select_related('author',)
+                        .annotate(is_favorited=Exists(self.favorites))
+                        .annotate(is_in_shopping_cart=Exists(self.cart))
                         .order_by('-pub_date')
                         )
             return queryset
         return Recipe.objects.all()
 
     @action(
-        ('post', 'delete'), permission_classes=(permissions.IsAuthenticated,),
+        ('post',), permission_classes=(permissions.IsAuthenticated,),
         detail=True,
     )
-    def favorite(self, request, pk):
+    def favorite(self, request, pk=None):
         user = request.user
         prescriptor = get_object_or_404(Recipe, pk=pk)
+        data = {
+            'user': user.id,
+            'prescriptor': prescriptor.id,
+        }
+        serializer = FavoriteSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        serializer = RecipeInfoSerializer(
+            prescriptor, context={"request": request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        if request.method == 'POST':
-            data = {
-                'user': user.id,
-                'prescriptor': prescriptor.id,
-            }
-            serializer = FavoriteSerializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            serializer = self.get_serializer(prescriptor)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        elif request.method == 'DELETE':
-            get_object_or_404(
-                Favorite, user=user, prescriptor=prescriptor,
-            ).delete()
-            message = {
-                'detail': 'Рецепт удалён из избранного'
-            }
-            return Response(message, status=status.HTTP_204_NO_CONTENT)
+    @favorite.mapping.delete
+    def delete_favorite(self, request, pk=None):
+        user = request.user
+        prescriptor = get_object_or_404(Recipe, pk=pk)
+        get_object_or_404(
+            Favorite, user=user, prescriptor=prescriptor,
+        ).delete()
+        message = {
+            'detail': 'Рецепт удалён из избранного'
+        }
+        return Response(message, status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        ('post', 'delete'), permission_classes=(permissions.IsAuthenticated,),
+        ('post',), permission_classes=(permissions.IsAuthenticated,),
         detail=True,
     )
-    def shopping_cart(self, request, pk):
+    def shopping_cart(self, request, pk=None):
         user = request.user
         prescriptor = get_object_or_404(Recipe, pk=pk)
+        data = {
+            'user': user.id,
+            'prescriptor': prescriptor.id,
+        }
+        serializer = ShoppingCartSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        serializer = RecipeInfoSerializer(
+            prescriptor, context={"request": request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        if request.method == 'POST':
-            data = {
-                'user': user.id,
-                'prescriptor': prescriptor.id,
-            }
-            serializer = ShoppingCartSerializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            serializer = self.get_serializer(prescriptor)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        elif request.method == 'DELETE':
-            get_object_or_404(
-                ShoppingCart, user=user, prescriptor=prescriptor,
-            ).delete()
-            message = {
-                'detail': 'Рецепт удалён из корзины'
-            }
-            return Response(message, status=status.HTTP_204_NO_CONTENT)
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, pk=None):
+        user = request.user
+        prescriptor = get_object_or_404(Recipe, pk=pk)
+        get_object_or_404(
+            ShoppingCart, user=user, prescriptor=prescriptor,
+        ).delete()
+        message = {
+            'detail': 'Рецепт удалён из корзины'
+        }
+        return Response(message, status=status.HTTP_204_NO_CONTENT)
 
     @action(
         ('get',), permission_classes=(permissions.IsAuthenticated,),
