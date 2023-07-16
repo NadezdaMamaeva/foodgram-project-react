@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists
 from django.http.response import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,7 +19,7 @@ from .serializers import (ComponentSerializer, ComponentPostSerializer,
                           RecipeInfoSerializer, RecipePostSerializer,
                           RecipeSerializer, ShoppingCartSerializer,
                           TagSerializer,)
-from .func import get_shopping_cart
+from .utils import get_shopping_cart
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -53,8 +53,6 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = PrescriptorFilter
-    favorites = Favorite.objects.filter(user=OuterRef('id'))
-    cart = ShoppingCart.objects.filter(user=OuterRef('id'))
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -62,16 +60,21 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
         return RecipePostSerializer
 
     def get_queryset(self):
-        if self.action in ('list', 'retrieve'):
-            queryset = (Recipe.objects
-                        .prefetch_related('tags', 'ingredients',)
-                        .select_related('author',)
-                        .annotate(is_favorited=Exists(self.favorites))
-                        .annotate(is_in_shopping_cart=Exists(self.cart))
-                        .order_by('-pub_date')
-                        )
-            return queryset
-        return Recipe.objects.all()
+        if self.request.user.is_authenticated:
+            user = self.request.user
+        else:
+            user = None
+        favorites = Favorite.objects.filter(user=user)
+        cart = ShoppingCart.objects.filter(user=user)
+        queryset = (
+            Recipe.objects
+            .prefetch_related('tags', 'ingredients',)
+            .select_related('author')
+            .annotate(is_favorited=Exists(favorites))
+            .annotate(is_in_shopping_cart=Exists(cart))
+            .order_by('-pub_date')
+        )
+        return queryset
 
     @action(
         ('post',), permission_classes=(permissions.IsAuthenticated,),

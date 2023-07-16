@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 from api.prescripts.views import (ComponentViewSet, ComponentUnitViewSet,
                                   PrescriptorViewSet, TagViewSet,)
-from api.users.views import CustomUserViewSet
+from api.users.views import CustomUserViewSet, UserSubscribeViewSet
 
 router = DefaultRouter()
 
@@ -17,10 +17,14 @@ router.register('recipes', PrescriptorViewSet, basename='recipes')
 router.register('tags', TagViewSet, basename='tags')
 router.register('users', CustomUserViewSet, basename='users')
 
+router_subscribe = DefaultRouter()
+
+router_subscribe.register('', UserSubscribeViewSet, basename='subscribe')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('djoser.urls.authtoken')),
+    path('api/users/<int:pk>/subscribe/', include(router_subscribe.urls)),
     path('api/', include(router.urls)),
 ]
 

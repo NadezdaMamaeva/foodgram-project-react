@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import viewsets
 
 from foodgram.pagination import CustomPagination
 from users.models import Subscription, User
@@ -22,37 +23,7 @@ class CustomUserViewSet(UserViewSet):
             return UserSerializer
         if self.action == 'set_password':
             return SetPasswordSerializer
-        if self.action in ('subscribe', 'subscriptions',):
-            return SubscriptionUserSerializer
         return SignUpSerializer
-
-    @action(
-        ('post', 'delete'), permission_classes=(IsAuthenticated,),
-        detail=True,
-    )
-    def subscribe(self, request, id):
-        user = request.user
-        author = get_object_or_404(User, pk=id)
-
-        if request.method == 'POST':
-            data = {
-                'author': author.pk,
-                'user': user.pk,
-            }
-            serializer = SubscriptionSerializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            serializer = self.get_serializer(author)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        elif request.method == 'DELETE':
-            get_object_or_404(
-                Subscription, author=author, user=user,
-            ).delete()
-            message = {
-                'detail': 'Вы отписались'
-            }
-            return Response(message, status=status.HTTP_204_NO_CONTENT)
 
     @action(('get',), permission_classes=(IsAuthenticated,), detail=False,)
     def subscriptions(self, request):
@@ -61,5 +32,42 @@ class CustomUserViewSet(UserViewSet):
             subscribing__user=user
         ).prefetch_related('prescriptors')
         page = self.paginate_queryset(subscriptions)
-        serializer = self.get_serializer(page, many=True)
+        serializer = SubscriptionUserSerializer(
+            page, many=True, context={'request': request}
+        )
         return self.get_paginated_response(serializer.data)
+
+
+class UserSubscribeViewSet(viewsets.ViewSet):
+    pagination_class = CustomPagination
+    permission_classes = (IsAuthenticated,)
+    serializer_class = SubscriptionSerializer
+
+    def create(self, request, *args, **kwargs):
+        id = kwargs['pk']
+        user = request.user
+        author = get_object_or_404(User, pk=id)
+
+        data = {
+            'author': author.pk,
+            'user': user.pk,
+        }
+        serializer = SubscriptionSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        serializer = SubscriptionUserSerializer(
+            author, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, *args, **kwargs):
+        id = kwargs['pk']
+        user = request.user
+        author = get_object_or_404(User, pk=id)
+        get_object_or_404(
+            Subscription, author=author, user=user,
+        ).delete()
+        message = {
+            'detail': 'Вы отписались'
+        }
+        return Response(message, status=status.HTTP_204_NO_CONTENT)
