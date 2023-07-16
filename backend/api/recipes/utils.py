@@ -1,6 +1,6 @@
 from django.db.models import Sum
 
-from prescripts.models import RecipeComponent
+from recipes.models import RecipeComponent
 
 
 def get_shopping_cart(user):

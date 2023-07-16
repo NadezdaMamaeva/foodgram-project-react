@@ -4,7 +4,7 @@ import os
 from django.core.management.base import BaseCommand, no_translations
 from django.conf import settings
 
-from prescripts.models import Component, ComponentUnit
+from recipes.models import Component, ComponentUnit
 
 
 TABLES_FOR_LOAD = (('ingredients.csv', Component,),)

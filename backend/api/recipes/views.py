@@ -10,10 +10,10 @@ from rest_framework.response import Response
 
 from foodgram.pagination import CustomPagination
 from foodgram.permissions import IsAdminOrReadOnly
-from prescripts.models import (Component, ComponentUnit, Favorite, Recipe,
+from recipes.models import (Component, ComponentUnit, Favorite, Recipe,
                                ShoppingCart, Tag,)
 
-from api.filters import ComponentFilter, PrescriptorFilter
+from api.filters import ComponentFilter, RecipeFilter
 from .serializers import (ComponentSerializer, ComponentPostSerializer,
                           ComponentUnitSerializer, FavoriteSerializer,
                           RecipeInfoSerializer, RecipePostSerializer,
@@ -47,12 +47,12 @@ class ComponentUnitViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class PrescriptorViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = PrescriptorFilter
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -82,25 +82,25 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk=None):
         user = request.user
-        prescriptor = get_object_or_404(Recipe, pk=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
         data = {
             'user': user.id,
-            'prescriptor': prescriptor.id,
+            'recipe': recipe.id,
         }
         serializer = FavoriteSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         serializer = RecipeInfoSerializer(
-            prescriptor, context={"request": request}
+            recipe, context={"request": request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
     def delete_favorite(self, request, pk=None):
         user = request.user
-        prescriptor = get_object_or_404(Recipe, pk=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
         get_object_or_404(
-            Favorite, user=user, prescriptor=prescriptor,
+            Favorite, user=user, recipe=recipe,
         ).delete()
         message = {
             'detail': 'Рецепт удалён из избранного'
@@ -113,25 +113,25 @@ class PrescriptorViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk=None):
         user = request.user
-        prescriptor = get_object_or_404(Recipe, pk=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
         data = {
             'user': user.id,
-            'prescriptor': prescriptor.id,
+            'recipe': recipe.id,
         }
         serializer = ShoppingCartSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         serializer = RecipeInfoSerializer(
-            prescriptor, context={"request": request}
+            recipe, context={"request": request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, pk=None):
         user = request.user
-        prescriptor = get_object_or_404(Recipe, pk=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
         get_object_or_404(
-            ShoppingCart, user=user, prescriptor=prescriptor,
+            ShoppingCart, user=user, recipe=recipe,
         ).delete()
         message = {
             'detail': 'Рецепт удалён из корзины'

@@ -4,8 +4,8 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.prescripts.views import (ComponentViewSet, ComponentUnitViewSet,
-                                  PrescriptorViewSet, TagViewSet,)
+from api.recipes.views import (ComponentViewSet, ComponentUnitViewSet,
+                                  RecipeViewSet, TagViewSet,)
 from api.users.views import CustomUserViewSet, UserSubscribeViewSet
 
 router = DefaultRouter()
@@ -13,7 +13,7 @@ router = DefaultRouter()
 router.register('ingredients', ComponentViewSet, basename='ingredients')
 router.register('componentunits', ComponentUnitViewSet,
                 basename='componentunits')
-router.register('recipes', PrescriptorViewSet, basename='recipes')
+router.register('recipes', RecipeViewSet, basename='recipes')
 router.register('tags', TagViewSet, basename='tags')
 router.register('users', CustomUserViewSet, basename='users')
 

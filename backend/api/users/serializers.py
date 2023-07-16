@@ -3,7 +3,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from prescripts.models import Recipe
+from recipes.models import Recipe
 
 from users.models import Subscription, User
 from users.validators import validate_username
@@ -58,7 +58,7 @@ class UserSerializer(UserSerializer):
         return obj.subscribing.filter(user=user).exists()
 
 
-class SubscriptionPrescriptorSerializer(serializers.ModelSerializer):
+class SubscriptionRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
@@ -86,11 +86,11 @@ class SubscriptionUserSerializer(UserSerializer):
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit')
         if limit:
-            prescriptors = obj.prescriptors.all()[:(int(limit))]
+            recipes = obj.recipes.all()[:(int(limit))]
         else:
-            prescriptors = obj.prescriptors.all()
-        serializer = SubscriptionPrescriptorSerializer(
-            prescriptors, many=True, read_only=True,
+            recipes = obj.recipes.all()
+        serializer = SubscriptionRecipeSerializer(
+            recipes, many=True, read_only=True,
         )
         return serializer.data
 

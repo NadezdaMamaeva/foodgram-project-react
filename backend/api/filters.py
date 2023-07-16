@@ -2,7 +2,7 @@ from django_filters.rest_framework import FilterSet, filters
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 
-from prescripts.models import Component, Recipe, Tag
+from recipes.models import Component, Recipe, Tag
 
 
 class ComponentFilter(SearchFilter):
@@ -13,7 +13,7 @@ class ComponentFilter(SearchFilter):
         fields = ('name',)
 
 
-class PrescriptorFilter(FilterSet):
+class RecipeFilter(FilterSet):
     tags = filters.ModelMultipleChoiceFilter(
         queryset=Tag.objects.all(),
         field_name='tags__slug',

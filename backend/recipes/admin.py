@@ -12,7 +12,7 @@ class TagAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',), }
 
 
-class PrescriptorComponentInLine(admin.TabularInline):
+class RecipeComponentInLine(admin.TabularInline):
     model = Recipe.ingredients.through
     extra = 1
 
@@ -25,7 +25,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('author', 'name', 'tags',)
     empty_value_display = '-пусто-'
     search_fields = ('name', 'cooking_time', 'ingredients__name',)
-    inlines = (PrescriptorComponentInLine,)
+    inlines = (RecipeComponentInLine,)
 
     @admin.display(description='Теги')
     def get_tags(self, obj):
@@ -52,17 +52,17 @@ class ComponentAdmin(admin.ModelAdmin):
 
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'prescriptor',)
+    list_display = ('id', 'user', 'recipe',)
     list_display_links = ('id',)
-    list_editable = ('prescriptor',)
+    list_editable = ('recipe',)
     list_filter = ('user',)
-    search_fields = ('prescriptor',)
+    search_fields = ('recipe',)
 
 
 @admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'prescriptor',)
+    list_display = ('id', 'user', 'recipe',)
     list_display_links = ('id',)
-    list_editable = ('prescriptor',)
+    list_editable = ('recipe',)
     list_filter = ('user',)
-    search_fields = ('prescriptor',)
+    search_fields = ('recipe',)

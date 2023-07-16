@@ -30,7 +30,7 @@ class CustomUserViewSet(UserViewSet):
         user = request.user
         subscriptions = User.objects.filter(
             subscribing__user=user
-        ).prefetch_related('prescriptors')
+        ).prefetch_related('recipes')
         page = self.paginate_queryset(subscriptions)
         serializer = SubscriptionUserSerializer(
             page, many=True, context={'request': request}
@@ -56,7 +56,7 @@ class UserSubscribeViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         serializer = SubscriptionUserSerializer(
-            author, context={'request': request}
+             author, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -65,7 +65,7 @@ class UserSubscribeViewSet(viewsets.ViewSet):
         user = request.user
         author = get_object_or_404(User, pk=id)
         get_object_or_404(
-            Subscription, author=author, user=user,
+                Subscription, author=author, user=user,
         ).delete()
         message = {
             'detail': 'Вы отписались'

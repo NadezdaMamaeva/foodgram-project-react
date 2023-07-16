@@ -77,17 +77,17 @@ class Tag(models.Model):
 
 class Recipe(models.Model):
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='prescriptors',
+        User, on_delete=models.CASCADE, related_name='recipes',
         verbose_name='Автор публикации',)
     name = models.CharField(max_length=100, verbose_name='Название рецепта',)
     image = models.ImageField(
-        upload_to='prescriptors/images/', null=True, blank=True,
+        upload_to='recipes/images/', null=True, blank=True,
         verbose_name='Изображение рецепта', default=None)
     text = models.TextField(verbose_name='Описание рецепта',)
     ingredients = models.ManyToManyField(Component,
                                          through='RecipeComponent',
                                          verbose_name='Ингредиенты',)
-    tags = models.ManyToManyField(Tag, related_name='prescriptors',
+    tags = models.ManyToManyField(Tag, related_name='recipes',
                                   verbose_name='Теги',)
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления рецепта',)
@@ -97,7 +97,7 @@ class Recipe(models.Model):
         ordering = ('-pub_date',)
         constraints = (models.UniqueConstraint(
                        fields=('name', 'author'),
-                       name='unique_prescriptor'),)
+                       name='unique_recipe'),)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -106,9 +106,9 @@ class Recipe(models.Model):
 
 
 class RecipeComponent(models.Model):
-    prescriptor = models.ForeignKey(
+    recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
-        related_name='prescriptor_component',
+        related_name='recipe_component',
     )
     component = models.ForeignKey(Component, on_delete=models.CASCADE)
     amount = models.PositiveSmallIntegerField(
@@ -117,13 +117,13 @@ class RecipeComponent(models.Model):
     class Meta:
         constraints = (
             models.UniqueConstraint(
-                fields=('prescriptor', 'component'),
-                name='unique_PrescriptorComponent'
+                fields=('recipe', 'component'),
+                name='unique_RecipeComponent'
             ),
         )
 
     def __str__(self):
-        return f'{self.prescriptor}: {self.component} - {self.amount}'
+        return f'{self.recipe}: {self.component} - {self.amount}'
 
 
 class Favorite(models.Model):
@@ -131,7 +131,7 @@ class Favorite(models.Model):
         User, on_delete=models.CASCADE, related_name='favorites',
         verbose_name='Пользователь, выбравший рецепт',
     )
-    prescriptor = models.ForeignKey(
+    recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Рецепт',
@@ -140,7 +140,7 @@ class Favorite(models.Model):
     class Meta:
         constraints = (
             models.UniqueConstraint(
-                fields=('user', 'prescriptor'),
+                fields=('user', 'recipe'),
                 name='unique_Favorite'
             ),
         )
@@ -148,7 +148,7 @@ class Favorite(models.Model):
         verbose_name_plural = 'Избранные рецепты'
 
     def __str__(self):
-        return f'{self.user} отметил {self.prescriptor}'
+        return f'{self.user} отметил {self.recipe}'
 
 
 class ShoppingCart(models.Model):
@@ -156,7 +156,7 @@ class ShoppingCart(models.Model):
         User, on_delete=models.CASCADE, related_name='cart',
         verbose_name='Пользователь, добавивший рецепт в корзину',
     )
-    prescriptor = models.ForeignKey(
+    recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
         related_name='cart',
         verbose_name='Рецепт',
@@ -165,7 +165,7 @@ class ShoppingCart(models.Model):
     class Meta:
         constraints = (
             models.UniqueConstraint(
-                fields=('user', 'prescriptor'),
+                fields=('user', 'recipe'),
                 name='unique_ShoppingCart'
             ),
         )
@@ -173,4 +173,4 @@ class ShoppingCart(models.Model):
         verbose_name_plural = 'Корзина'
 
     def __str__(self):
-        return f'{self.user} добавил {self.prescriptor} в корзину'
+        return f'{self.user} добавил {self.recipe} в корзину'

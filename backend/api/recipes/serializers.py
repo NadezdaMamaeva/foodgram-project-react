@@ -7,7 +7,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from prescripts.models import (Component, ComponentUnit, Favorite, Recipe,
+from recipes.models import (Component, ComponentUnit, Favorite, Recipe,
                                RecipeComponent, ShoppingCart, Tag)
 from api.users.serializers import UserSerializer
 
@@ -78,7 +78,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(many=False, read_only=True,)
     image = Base64ImageField(required=False, allow_null=True)
     ingredients = RecipeComponentSerializer(
-        many=True, source='prescriptor_component'
+        many=True, source='recipe_component'
     )
     tags = TagSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(
@@ -106,7 +106,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=True, allow_null=False, max_length=None)
     ingredients = RecipeComponentSerializer(
         many=True, required=True,
-        source='prescriptor_component',
+        source='recipe_component',
     )
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all(), required=True,
@@ -124,33 +124,33 @@ class RecipePostSerializer(serializers.ModelSerializer):
                   'tags', 'cooking_time',)
 
     @staticmethod
-    def _set_components(prescriptor, components):
-        prescriptor_component = []
+    def _set_components(recipe, components):
+        recipe_component = []
         for tmp in components:
             component = tmp['component']['id']
             amount = tmp.get('amount')
-            prescriptor_component.append(
+            recipe_component.append(
                 RecipeComponent(
-                    prescriptor=prescriptor,
+                    recipe=recipe,
                     component=component,
                     amount=amount
                 )
             )
-        RecipeComponent.objects.bulk_create(prescriptor_component)
+        RecipeComponent.objects.bulk_create(recipe_component)
 
     def create(self, validated_data):
         author = self.context.get('request').user
-        components = validated_data.pop('prescriptor_component')
+        components = validated_data.pop('recipe_component')
         tags = validated_data.pop('tags')
 
         with transaction.atomic():
-            prescriptor = Recipe.objects.create(
+            recipe = Recipe.objects.create(
                 author=author, **validated_data
             )
-            prescriptor.tags.set(tags)
-            self._set_components(prescriptor, components)
+            recipe.tags.set(tags)
+            self._set_components(recipe, components)
 
-        return prescriptor
+        return recipe
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
@@ -162,7 +162,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
 
         tags = validated_data.pop('tags')
-        components = validated_data.pop('prescriptor_component')
+        components = validated_data.pop('recipe_component')
 
         with transaction.atomic():
             instance.tags.clear()
@@ -188,7 +188,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
         write_only=True,
         error_messages={'does_not_exist': 'Такого пользователя не существует'},
     )
-    prescriptor = serializers.PrimaryKeyRelatedField(
+    recipe = serializers.PrimaryKeyRelatedField(
         queryset=Recipe.objects.all(),
         write_only=True,
         error_messages={'does_not_exist': 'Такого рецепта не существует'},
@@ -196,12 +196,12 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Favorite
-        fields = ('user', 'prescriptor',)
+        fields = ('user', 'recipe',)
 
     def validate(self, data):
         user = data.get('user')
-        prescriptor = data.get('prescriptor')
-        if user.favorites.filter(prescriptor=prescriptor).exists():
+        recipe = data.get('recipe')
+        if user.favorites.filter(recipe=recipe).exists():
             raise ValidationError({'error': 'Рецепт уже в избранном'})
         return data
 
@@ -212,7 +212,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         write_only=True,
         error_messages={'does_not_exist': 'Такого пользователя не существует'},
     )
-    prescriptor = serializers.PrimaryKeyRelatedField(
+    recipe = serializers.PrimaryKeyRelatedField(
         queryset=Recipe.objects.all(),
         write_only=True,
         error_messages={'does_not_exist': 'Такого рецепта не существует'},
@@ -220,11 +220,11 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ShoppingCart
-        fields = ('user', 'prescriptor',)
+        fields = ('user', 'recipe',)
 
     def validate(self, data):
         user = data.get('user')
-        prescriptor = data.get('prescriptor')
-        if user.cart.filter(prescriptor=prescriptor).exists():
+        recipe = data.get('recipe')
+        if user.cart.filter(recipe=recipe).exists():
             raise ValidationError({'error': 'Рецепт уже в корзине'})
         return data
