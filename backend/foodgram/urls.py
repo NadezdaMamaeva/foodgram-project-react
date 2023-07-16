@@ -5,7 +5,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from api.recipes.views import (ComponentViewSet, ComponentUnitViewSet,
-                                  RecipeViewSet, TagViewSet,)
+                               RecipeViewSet, TagViewSet,)
 from api.users.views import CustomUserViewSet, UserSubscribeViewSet
 
 router = DefaultRouter()

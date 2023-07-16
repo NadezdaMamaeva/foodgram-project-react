@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from foodgram.pagination import CustomPagination
 from foodgram.permissions import IsAdminOrReadOnly
 from recipes.models import (Component, ComponentUnit, Favorite, Recipe,
-                               ShoppingCart, Tag,)
+                            ShoppingCart, Tag,)
 
 from api.filters import ComponentFilter, RecipeFilter
 from .serializers import (ComponentSerializer, ComponentPostSerializer,

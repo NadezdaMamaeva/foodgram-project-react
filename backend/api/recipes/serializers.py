@@ -8,7 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from recipes.models import (Component, ComponentUnit, Favorite, Recipe,
-                               RecipeComponent, ShoppingCart, Tag)
+                            RecipeComponent, ShoppingCart, Tag)
 from api.users.serializers import UserSerializer
 
 
