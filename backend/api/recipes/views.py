@@ -1,4 +1,4 @@
-from django.db.models import Exists
+from django.db.models import Exists, OuterRef, Value
 from django.http.response import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,7 +19,7 @@ from .serializers import (ComponentSerializer, ComponentPostSerializer,
                           RecipeInfoSerializer, RecipePostSerializer,
                           RecipeSerializer, ShoppingCartSerializer,
                           TagSerializer,)
-from .utils import get_shopping_cart
+from .utils import get_shopping_cart, make
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -62,16 +62,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_authenticated:
             user = self.request.user
+            favorites = Exists(Favorite.objects.filter(
+                user=user, recipe=OuterRef('id')
+            ))
+            cart = Exists(ShoppingCart.objects.filter(
+                user=user, recipe=OuterRef('id')
+            ))
         else:
-            user = None
-        favorites = Favorite.objects.filter(user=user)
-        cart = ShoppingCart.objects.filter(user=user)
+            favorites = Value(False)
+            cart = Value(False)
         queryset = (
             Recipe.objects
             .prefetch_related('tags', 'ingredients',)
             .select_related('author')
-            .annotate(is_favorited=Exists(favorites))
-            .annotate(is_in_shopping_cart=Exists(cart))
+            .annotate(is_favorited=favorites)
+            .annotate(is_in_shopping_cart=cart)
             .order_by('-pub_date')
         )
         return queryset
@@ -81,18 +86,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         detail=True,
     )
     def favorite(self, request, pk=None):
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        data = {
-            'user': user.id,
-            'recipe': recipe.id,
-        }
-        serializer = FavoriteSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        serializer = RecipeInfoSerializer(
-            recipe, context={"request": request}
-        )
+        recipe = make(request, pk, FavoriteSerializer)
+        serializer = RecipeInfoSerializer(recipe, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
@@ -112,18 +107,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         detail=True,
     )
     def shopping_cart(self, request, pk=None):
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        data = {
-            'user': user.id,
-            'recipe': recipe.id,
-        }
-        serializer = ShoppingCartSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        serializer = RecipeInfoSerializer(
-            recipe, context={"request": request}
-        )
+        recipe = make(request, pk, ShoppingCartSerializer)
+        serializer = RecipeInfoSerializer(recipe, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @shopping_cart.mapping.delete

@@ -1,6 +1,7 @@
 from django.db.models import Sum
+from django.shortcuts import get_object_or_404
 
-from recipes.models import RecipeComponent
+from recipes.models import Recipe, RecipeComponent
 
 
 def get_shopping_cart(user):
@@ -21,3 +22,16 @@ def get_shopping_cart(user):
         )
     content = '\n'.join(data)
     return content
+
+
+def make(request, pk, serializer_class):
+    user = request.user
+    recipe = get_object_or_404(Recipe, pk=pk)
+    data = {
+        'user': user.id,
+        'recipe': recipe.id,
+    }
+    serializer = serializer_class(data=data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return recipe

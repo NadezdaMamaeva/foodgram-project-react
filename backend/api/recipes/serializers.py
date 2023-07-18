@@ -54,7 +54,7 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class RecipeComponentSerializer(serializers.ModelSerializer):
+class IngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Component.objects.all(),
         source='component.id',
@@ -77,16 +77,12 @@ class RecipeComponentSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(many=False, read_only=True,)
     image = Base64ImageField(required=False, allow_null=True)
-    ingredients = RecipeComponentSerializer(
+    ingredients = IngredientSerializer(
         many=True, source='recipe_component'
     )
     tags = TagSerializer(many=True)
-    is_favorited = serializers.SerializerMethodField(
-        method_name='get_is_favorited'
-    )
-    is_in_shopping_cart = serializers.SerializerMethodField(
-        method_name='get_is_in_shopping_cart'
-    )
+    is_favorited = serializers.BooleanField()
+    is_in_shopping_cart = serializers.BooleanField()
 
     class Meta:
         model = Recipe
@@ -94,17 +90,11 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'tags', 'cooking_time', 'is_favorited',
                   'is_in_shopping_cart',)
 
-    def get_is_favorited(self, obj):
-        return obj.is_favorited
-
-    def get_is_in_shopping_cart(self, obj):
-        return obj.is_in_shopping_cart
-
 
 class RecipePostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True,)
     image = Base64ImageField(required=True, allow_null=False, max_length=None)
-    ingredients = RecipeComponentSerializer(
+    ingredients = IngredientSerializer(
         many=True, required=True,
         source='recipe_component',
     )
