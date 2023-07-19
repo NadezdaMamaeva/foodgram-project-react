@@ -142,7 +142,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
                 })
             if int(data['amount']) <= 0:
                 raise ValidationError({
-                    'amount': f'Количество "{ingredient}" должно быть больше 0!'
+                    'amount': f'Количество "{ingredient}" должно быть > 0!'
                 })
             ingredients_set.add(ingredient)
         return value
