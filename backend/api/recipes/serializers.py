@@ -128,6 +128,25 @@ class RecipePostSerializer(serializers.ModelSerializer):
             )
         RecipeComponent.objects.bulk_create(recipe_component)
 
+    def validate_ingredients(self, value):
+        if not value:
+            raise ValidationError({
+                'ingredients': 'Нужен хотя бы один ингредиент!'
+            })
+        ingredients_set = set()
+        for data in value:
+            ingredient = data['component']['id']
+            if ingredient in ingredients_set:
+                raise ValidationError({
+                    'ingredients': f'Ингредиент "{ingredient}" повторяется!'
+                })
+            if int(data['amount']) <= 0:
+                raise ValidationError({
+                    'amount': f'Количество "{ingredient}" должно быть больше 0!'
+                })
+            ingredients_set.add(ingredient)
+        return value
+
     def create(self, validated_data):
         author = self.context.get('request').user
         components = validated_data.pop('recipe_component')
