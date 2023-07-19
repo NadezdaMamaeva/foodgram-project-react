@@ -137,13 +137,13 @@ class RecipePostSerializer(serializers.ModelSerializer):
         for data in value:
             ingredient = data['component']['id']
             if ingredient in ingredients_set:
-                raise ValidationError({
-                    'ingredients': f'Ингредиент "{ingredient}" повторяется!'
-                })
+                raise ValidationError(
+                    f'Ингредиент "{ingredient}" повторяется!'
+                )
             if int(data['amount']) <= 0:
-                raise ValidationError({
-                    'amount': f'Количество "{ingredient}" должно быть > 0!'
-                })
+                raise ValidationError(
+                    f'Количество "{ingredient}" должно быть > 0!'
+                )
             ingredients_set.add(ingredient)
         return value
 
